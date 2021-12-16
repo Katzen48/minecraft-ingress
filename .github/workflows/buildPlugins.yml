@@ -21,6 +21,8 @@ jobs:
         with:
           arguments: publish
           gradle-version: 7.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v2
         with:
           name: bungeecord
