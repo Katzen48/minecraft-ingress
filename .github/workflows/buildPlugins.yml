@@ -8,6 +8,9 @@ on:
   push:
     branches:
       - master
+  release:
+    types:
+      - published
 
 jobs:
   build:
@@ -31,3 +34,9 @@ jobs:
         with:
           name: velocity
           path: velocity/build/libs
+      - uses: softprops/action-gh-release@v1
+        name: Release
+        with:
+          files: |
+            bungeecord/build/libs/bungeecord-all.jar
+            velocity/build/libs/velocity-all.jar
