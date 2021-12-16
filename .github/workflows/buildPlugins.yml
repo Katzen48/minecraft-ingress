@@ -31,10 +31,15 @@ jobs:
         with:
           name: velocity
           path: velocity/build/libs
+      - name: Bump version and push tag
+        uses: mathieudutour/github-tag-action@v6.0
+        id: tag_version
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: softprops/action-gh-release@v1
         name: Release
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
           files: |
             bungeecord/build/libs/bungeecord-all.jar
             velocity/build/libs/velocity-all.jar
