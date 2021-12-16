@@ -1,0 +1,4 @@
+name: IngressPlugin
+main: net.chrotos.ingress.minecraft.bungeecord.IngressPlugin
+version: 1.0
+author: Katzen48
