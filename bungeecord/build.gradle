@@ -7,7 +7,6 @@
 plugins {
     id 'idea'
     id 'java'
-    id 'maven-publish'
     id 'com.github.johnrengelman.shadow' version '7.1.1'
 }
 
@@ -23,21 +22,4 @@ dependencies {
 
     compileOnly 'net.md-5:bungeecord-api:1.18-R0.1-SNAPSHOT'
     implementation 'io.kubernetes:client-java-extended:10.0.0'
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/katzen48/minecraft-ingress"
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}
-
-publish {
-    dependsOn shadowJar
 }
