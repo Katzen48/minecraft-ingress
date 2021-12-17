@@ -4,9 +4,11 @@ import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.CallGeneratorParams;
+import io.kubernetes.client.util.Config;
 import okhttp3.OkHttpClient;
 
 import java.io.IOException;
@@ -18,27 +20,27 @@ public class Watcher {
     private SharedInformerFactory factory;
 
     public Watcher(PodRessourceHandler handler) throws IOException {
+        ApiClient apiClient = Config.defaultClient();
+        Configuration.setDefaultApiClient(apiClient);
+
         CoreV1Api v1Api = new CoreV1Api();
-        ApiClient apiClient = v1Api.getApiClient();
         OkHttpClient httpClient =
                 apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
         apiClient.setHttpClient(httpClient);
 
         factory = new SharedInformerFactory();
         SharedIndexInformer<V1Pod> podInformer = factory.sharedIndexInformerFor(
-                (CallGeneratorParams params) -> {
-                    return v1Api.listPodForAllNamespacesCall(
-                            null,
-                            null,
-                            null,
-                            "net.chrotos.ingress.minecraft/discover=true",
-                            null,
-                            null,
-                            params.resourceVersion,
-                            params.timeoutSeconds,
-                            params.watch,
-                            null);
-                },
+                (CallGeneratorParams params) -> v1Api.listPodForAllNamespacesCall(
+                        null,
+                        null,
+                        null,
+                        "net.chrotos.ingress.minecraft/discover=true",
+                        null,
+                        null,
+                        params.resourceVersion,
+                        params.timeoutSeconds,
+                        params.watch,
+                        null),
                 V1Pod.class,
                 V1PodList.class);
 
