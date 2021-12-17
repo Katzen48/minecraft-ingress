@@ -55,8 +55,12 @@ public class Watcher {
                         Stream<V1ContainerStatus> stream = obj.getStatus().getContainerStatuses().stream()
                                                                             .filter(V1ContainerStatus::getReady);
 
-                        if (stream.findAny().isPresent()) {
-                            handler.onEventReceived(obj, false);
+                        try {
+                            if (stream.findAny().isPresent()) {
+                                handler.onEventReceived(obj, false);
+                            }
+                        } finally {
+                            stream.close();
                         }
                     }
 
@@ -74,13 +78,22 @@ public class Watcher {
                         Stream<V1ContainerStatus> newStream = newObj.getStatus().getContainerStatuses().stream()
                                                                                 .filter(V1ContainerStatus::getReady);
 
-                        if (!oldStream.findAny().isPresent() && newStream.findAny().isPresent()) {
-                            handler.onEventReceived(newObj, false);
+                        boolean oldPresent = oldStream.findAny().isPresent();
+                        boolean newPresent = newStream.findAny().isPresent();
+
+                        try {
+                            if (!oldPresent && newPresent) {
+                                handler.onEventReceived(newObj, false);
+                            }
+
+                            if (oldPresent && !newPresent) {
+                                handler.onEventReceived(oldObj, true);
+                            }
+                        } finally {
+                            oldStream.close();
+                            newStream.close();
                         }
 
-                        if (oldStream.findAny().isPresent() && !newStream.findAny().isPresent()) {
-                            handler.onEventReceived(oldObj, true);
-                        }
                     }
 
                     @Override
