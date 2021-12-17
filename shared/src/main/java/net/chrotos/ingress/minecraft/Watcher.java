@@ -27,13 +27,12 @@ public class Watcher {
         factory = new SharedInformerFactory();
         SharedIndexInformer<V1Pod> podInformer = factory.sharedIndexInformerFor(
                 (CallGeneratorParams params) -> {
-                    return v1Api.listNamespacedPodCall(
-                            null,
-                            null,
+                    return v1Api.listPodForAllNamespacesCall(
                             null,
                             null,
                             null,
                             "net.chrotos.ingress.minecraft/discover=true",
+                            null,
                             null,
                             params.resourceVersion,
                             params.timeoutSeconds,
