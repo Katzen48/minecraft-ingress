@@ -24,7 +24,7 @@ public class Watcher {
                 apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
         apiClient.setHttpClient(httpClient);
 
-        SharedInformerFactory factory = new SharedInformerFactory();
+        factory = new SharedInformerFactory();
         SharedIndexInformer<V1Pod> podInformer = factory.sharedIndexInformerFor(
                 (CallGeneratorParams params) -> {
                     return v1Api.listNamespacedPodCall(
@@ -61,18 +61,16 @@ public class Watcher {
                         if (!oldStream.findAny().isPresent() && newStream.findAny().isPresent()) {
                             handler.onEventReceived(newObj, false);
                         }
+
+                        if (oldStream.findAny().isPresent() && !newStream.findAny().isPresent()) {
+                            handler.onEventReceived(oldObj, true);
+                        }
                     }
 
                     @Override
-                    public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) {
-
-
-                        handler.onEventReceived(obj, true);
-                    }
+                    public void onDelete(V1Pod obj, boolean deletedFinalStateUnknown) { }
                 }
         );
-
-        factory.startAllRegisteredInformers();
     }
 
     public void start() {
