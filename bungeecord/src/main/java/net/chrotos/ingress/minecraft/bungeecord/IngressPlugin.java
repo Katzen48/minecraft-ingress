@@ -17,8 +17,11 @@ public class IngressPlugin extends Plugin {
                 String name = Objects.requireNonNull(pod.getMetadata()).getName();
 
                 if (deleted) {
+                    getLogger().info(String.format("Server %s will be removed.", name));
                     getProxy().getServers().remove(name);
                 } else {
+                    getLogger().info(String.format("New Server %s will be added.", name));
+
                     getProxy().getServers().put(name, getProxy().constructServerInfo(
                                 name, InetSocketAddress.createUnresolved(Objects.requireNonNull(
                                                                                 Objects.requireNonNull(pod.getStatus())

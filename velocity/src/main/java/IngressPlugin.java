@@ -31,8 +31,11 @@ public class IngressPlugin {
                 String name = Objects.requireNonNull(pod.getMetadata()).getName();
 
                 if (deleted) {
+                    logger.info("Server {} will be removed.", name);
                     proxyServer.getServer(name).ifPresent(registeredServer -> proxyServer.unregisterServer(registeredServer.getServerInfo()));
                 } else {
+                    logger.info("New Server {} will be added.", name);
+
                     proxyServer.registerServer(new ServerInfo(name, InetSocketAddress.createUnresolved(Objects.requireNonNull(
                             Objects.requireNonNull(pod.getStatus())
                                     .getPodIP()),

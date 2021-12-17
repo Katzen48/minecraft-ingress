@@ -45,7 +45,15 @@ public class Watcher {
         podInformer.addEventHandler(
                 new ResourceEventHandler<>() {
                     @Override
-                    public void onAdd(V1Pod obj) { }
+                    public void onAdd(V1Pod obj) {
+                        Stream<V1ContainerStatus> stream = Objects.requireNonNull(Objects.requireNonNull(
+                                obj.getStatus()).getContainerStatuses()).stream()
+                                .filter(V1ContainerStatus::getReady);
+
+                        if (stream.findAny().isPresent()) {
+                            handler.onEventReceived(obj, false);
+                        }
+                    }
 
                     @Override
                     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
