@@ -48,9 +48,12 @@ public class Watcher {
                 new ResourceEventHandler<>() {
                     @Override
                     public void onAdd(V1Pod obj) {
-                        Stream<V1ContainerStatus> stream = Objects.requireNonNull(Objects.requireNonNull(
-                                obj.getStatus()).getContainerStatuses()).stream()
-                                .filter(V1ContainerStatus::getReady);
+                        if (obj.getStatus() == null || obj.getStatus().getContainerStatuses() == null) {
+                            return;
+                        }
+
+                        Stream<V1ContainerStatus> stream = obj.getStatus().getContainerStatuses().stream()
+                                                                            .filter(V1ContainerStatus::getReady);
 
                         if (stream.findAny().isPresent()) {
                             handler.onEventReceived(obj, false);
@@ -59,13 +62,17 @@ public class Watcher {
 
                     @Override
                     public void onUpdate(V1Pod oldObj, V1Pod newObj) {
-                        Stream<V1ContainerStatus> oldStream = Objects.requireNonNull(Objects.requireNonNull(
-                                                            oldObj.getStatus()).getContainerStatuses()).stream()
-                                                            .filter(V1ContainerStatus::getReady);
+                        if (oldObj.getStatus() == null || newObj.getStatus() == null
+                                || oldObj.getStatus().getContainerStatuses() == null
+                                || newObj.getStatus().getContainerStatuses() == null) {
+                            return;
+                        }
 
-                        Stream<V1ContainerStatus> newStream = Objects.requireNonNull(Objects.requireNonNull(
-                                newObj.getStatus()).getContainerStatuses()).stream()
-                                .filter(V1ContainerStatus::getReady);
+                        Stream<V1ContainerStatus> oldStream = oldObj.getStatus().getContainerStatuses().stream()
+                                                                                .filter(V1ContainerStatus::getReady);
+
+                        Stream<V1ContainerStatus> newStream = newObj.getStatus().getContainerStatuses().stream()
+                                                                                .filter(V1ContainerStatus::getReady);
 
                         if (!oldStream.findAny().isPresent() && newStream.findAny().isPresent()) {
                             handler.onEventReceived(newObj, false);
