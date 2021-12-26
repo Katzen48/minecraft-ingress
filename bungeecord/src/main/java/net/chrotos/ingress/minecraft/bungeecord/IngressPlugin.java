@@ -19,6 +19,9 @@ public class IngressPlugin extends Plugin {
                 if (deleted) {
                     getLogger().info(String.format("Server %s will be removed.", name));
                     getProxy().getServers().remove(name);
+                    getProxy().getConfigurationAdapter().getListeners().forEach(listenerInfo -> {
+                        listenerInfo.getServerPriority().remove(name);
+                    });
                 } else {
                     getLogger().info(String.format("New Server %s will be added.", name));
 

@@ -36,6 +36,7 @@ public class IngressPlugin {
                 if (deleted) {
                     logger.info("Server {} will be removed.", name);
                     proxyServer.getServer(name).ifPresent(registeredServer -> proxyServer.unregisterServer(registeredServer.getServerInfo()));
+                    proxyServer.getConfiguration().getAttemptConnectionOrder().remove(name);
                 } else {
                     logger.info("New Server {} will be added.", name);
 
