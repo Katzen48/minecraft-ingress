@@ -51,7 +51,7 @@ public class IngressPlugin {
                     }
 
                     String tryServer = pod.getMetadata().getLabels()
-                            .getOrDefault("net.chrotos.ingress.minecraft/lobby-server", "false");
+                            .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         proxyServer.getConfiguration().getAttemptConnectionOrder().add(name);
                     }

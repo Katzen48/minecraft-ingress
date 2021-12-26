@@ -31,7 +31,7 @@ public class IngressPlugin extends Plugin {
                             false));
 
                     String tryServer = pod.getMetadata().getLabels()
-                                      .getOrDefault("net.chrotos.ingress.minecraft/lobby-server", "false");
+                                      .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         getProxy().getConfigurationAdapter().getListeners().forEach(listenerInfo -> {
                             listenerInfo.getServerPriority().add(name);
