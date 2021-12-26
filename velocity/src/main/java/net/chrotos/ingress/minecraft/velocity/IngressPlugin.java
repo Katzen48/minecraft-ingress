@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.chrotos.ingress.minecraft.Watcher;
 import org.slf4j.Logger;
@@ -38,10 +39,22 @@ public class IngressPlugin {
                 } else {
                     logger.info("New Server {} will be added.", name);
 
-                    proxyServer.registerServer(new ServerInfo(name, InetSocketAddress.createUnresolved(Objects.requireNonNull(
+                    RegisteredServer server = proxyServer.registerServer(new ServerInfo(name,
+                            InetSocketAddress.createUnresolved(Objects.requireNonNull(
                             Objects.requireNonNull(pod.getStatus())
                                     .getPodIP()),
                             25565)));
+
+                    if (server == null) {
+                        logger.error("Could not register server " + name);
+                        return;
+                    }
+
+                    String tryServer = pod.getMetadata().getLabels()
+                            .getOrDefault("net.chrotos.ingress.minecraft/lobby-server", "false");
+                    if (tryServer.equalsIgnoreCase("true")) {
+                        proxyServer.getConfiguration().getAttemptConnectionOrder().add(name);
+                    }
                 }
             });
 
