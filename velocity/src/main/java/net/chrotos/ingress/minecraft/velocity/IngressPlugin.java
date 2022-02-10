@@ -57,7 +57,7 @@ public class IngressPlugin {
                             .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
-                            Method method = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration")
+                            Method method = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration$Servers")
                                             .getMethod("setAttemptConnectionOrder", List.class);
 
                             method.invoke(proxyServer.getConfiguration(),
