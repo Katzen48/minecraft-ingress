@@ -59,6 +59,9 @@ public class Watcher {
                             if (stream.findAny().isPresent()) {
                                 handler.onEventReceived(obj, false);
                             }
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            stream.close();
                         } finally {
                             stream.close();
                         }
@@ -89,6 +92,10 @@ public class Watcher {
                             if (oldPresent && !newPresent) {
                                 handler.onEventReceived(oldObj, true);
                             }
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                            oldStream.close();
+                            newStream.close();
                         } finally {
                             oldStream.close();
                             newStream.close();

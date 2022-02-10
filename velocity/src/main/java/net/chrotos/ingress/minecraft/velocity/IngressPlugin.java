@@ -11,8 +11,12 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.chrotos.ingress.minecraft.Watcher;
 import org.slf4j.Logger;
 
-import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Plugin(id="ingress-plugin", name = "Kubernetes Ingress Plugin", version = "1.0", authors = {"Katzen48"})
@@ -54,13 +58,22 @@ public class IngressPlugin {
                     String tryServer = pod.getMetadata().getLabels()
                             .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
+                        if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
+                            MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+                            MethodType type = MethodType.methodType(Void.class, List.class);
+                            MethodHandle handle = lookup.findVirtual(
+                                    Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration"),
+                                    "setAttemptConnectionOrder", type);
+
+                            handle.invoke(new ArrayList<String>(proxyServer.getConfiguration().getAttemptConnectionOrder()));
+                        }
                         proxyServer.getConfiguration().getAttemptConnectionOrder().add(name);
                     }
                 }
             });
 
             watcher.start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             proxyServer.shutdown();
         }
