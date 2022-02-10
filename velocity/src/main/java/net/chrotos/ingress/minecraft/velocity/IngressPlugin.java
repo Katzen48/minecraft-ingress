@@ -11,6 +11,7 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.chrotos.ingress.minecraft.Watcher;
 import org.slf4j.Logger;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -57,11 +58,17 @@ public class IngressPlugin {
                             .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
+                            Field field = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration")
+                                            .getDeclaredField("servers");
+                            field.setAccessible(true);
+
+                            Object servers = field.get(proxyServer.getConfiguration());
+
                             Method method = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration$Servers")
                                             .getDeclaredMethod("setAttemptConnectionOrder", List.class);
                             method.setAccessible(true);
 
-                            method.invoke(proxyServer.getConfiguration(),
+                            method.invoke(servers,
                                     new ArrayList<>(proxyServer.getConfiguration().getAttemptConnectionOrder()));
                         }
 
