@@ -60,7 +60,7 @@ public class IngressPlugin {
                     if (tryServer.equalsIgnoreCase("true")) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
                             MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-                            MethodType type = MethodType.methodType(Void.class, List.class);
+                            MethodType type = MethodType.methodType(void.class, List.class);
                             MethodHandle handle = lookup.findVirtual(
                                     Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration"),
                                     "setAttemptConnectionOrder", type);
