@@ -58,7 +58,8 @@ public class IngressPlugin {
                     if (tryServer.equalsIgnoreCase("true")) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
                             Method method = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration$Servers")
-                                            .getMethod("setAttemptConnectionOrder", List.class);
+                                            .getDeclaredMethod("setAttemptConnectionOrder", List.class);
+                            method.setAccessible(true);
 
                             method.invoke(proxyServer.getConfiguration(),
                                     new ArrayList<>(proxyServer.getConfiguration().getAttemptConnectionOrder()));
