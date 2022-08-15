@@ -34,7 +34,7 @@ public class IngressPlugin {
     public void onProxyInitialization(ProxyInitializeEvent event) {
         try {
             watcher = new Watcher((pod, deleted) -> {
-                String name = Objects.requireNonNull(pod.getMetadata()).getName();
+                String name = Objects.requireNonNull(pod.getPod().getMetadata()).getName();
 
                 if (deleted) {
                     logger.info("Server {} will be removed.", name);
@@ -45,7 +45,7 @@ public class IngressPlugin {
 
                     RegisteredServer server = proxyServer.registerServer(new ServerInfo(name,
                             InetSocketAddress.createUnresolved(Objects.requireNonNull(
-                            Objects.requireNonNull(pod.getStatus())
+                            Objects.requireNonNull(pod.getPod().getStatus())
                                     .getPodIP()),
                             25565)));
 
@@ -54,7 +54,7 @@ public class IngressPlugin {
                         return;
                     }
 
-                    String tryServer = pod.getMetadata().getLabels()
+                    String tryServer = pod.getPod().getMetadata().getLabels()
                             .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {

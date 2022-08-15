@@ -12,12 +12,11 @@ import io.kubernetes.client.util.Config;
 import okhttp3.OkHttpClient;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class Watcher {
-    private SharedInformerFactory factory;
+    private final SharedInformerFactory factory;
 
     public Watcher(PodRessourceHandler handler) throws IOException {
         ApiClient apiClient = Config.defaultClient();
@@ -38,6 +37,7 @@ public class Watcher {
                         null,
                         null,
                         params.resourceVersion,
+                        null,
                         params.timeoutSeconds,
                         params.watch,
                         null),
@@ -57,7 +57,7 @@ public class Watcher {
 
                         try {
                             if (stream.findAny().isPresent()) {
-                                handler.onEventReceived(obj, false);
+                                handler.onEventReceived(new Pod(obj, v1Api), false);
                             }
                         } catch (Throwable e) {
                             e.printStackTrace();
@@ -86,11 +86,13 @@ public class Watcher {
 
                         try {
                             if (!oldPresent && newPresent) {
-                                handler.onEventReceived(newObj, false);
+                                handler.onEventReceived(new Pod(newObj, v1Api), false);
                             }
 
                             if (oldPresent && !newPresent) {
-                                handler.onEventReceived(oldObj, true);
+                                Pod pod = new Pod(oldObj, v1Api);
+                                handler.onEventReceived(pod, true);
+                                pod.delete();
                             }
                         } catch (Throwable e) {
                             e.printStackTrace();

@@ -14,7 +14,7 @@ public class IngressPlugin extends Plugin {
     public void onEnable() {
         try {
             watcher = new Watcher((pod, deleted) -> {
-                String name = Objects.requireNonNull(pod.getMetadata()).getName();
+                String name = Objects.requireNonNull(pod.getPod().getMetadata()).getName();
 
                 if (deleted) {
                     getLogger().info(String.format("Server %s will be removed.", name));
@@ -27,13 +27,13 @@ public class IngressPlugin extends Plugin {
 
                     getProxy().getServers().put(name, getProxy().constructServerInfo(
                                 name, InetSocketAddress.createUnresolved(Objects.requireNonNull(
-                                                                                Objects.requireNonNull(pod.getStatus())
+                                                                                Objects.requireNonNull(pod.getPod().getStatus())
                                                                                 .getPodIP()),
                                                                     25565),
                             "",
                             false));
 
-                    String tryServer = pod.getMetadata().getLabels()
+                    String tryServer = pod.getPod().getMetadata().getLabels()
                                       .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
                     if (tryServer.equalsIgnoreCase("true")) {
                         getProxy().getConfigurationAdapter().getListeners().forEach(listenerInfo -> {
