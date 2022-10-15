@@ -10,10 +10,11 @@ import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.Config;
 import okhttp3.OkHttpClient;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 public class Watcher {
     private final SharedInformerFactory factory;
@@ -27,26 +28,22 @@ public class Watcher {
                 apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
         apiClient.setHttpClient(httpClient);
 
-        factory = new SharedInformerFactory();
+        factory = new SharedInformerFactory(apiClient);
         ResourceEventHandler<V1Pod> resourceEventHandler = new ResourceEventHandler<>() {
             @Override
             public void onAdd(V1Pod obj) {
                 if (obj.getStatus() == null || obj.getStatus().getContainerStatuses() == null) {
                     return;
                 }
-
-                Stream<V1ContainerStatus> stream = obj.getStatus().getContainerStatuses().stream()
-                        .filter(V1ContainerStatus::getReady);
+                // TODO change to service lookup
+                Optional<V1ContainerStatus> status = getServerStatus(obj);
 
                 try {
-                    if (stream.findAny().isPresent()) {
+                    if (status.isPresent() && status.get().getReady()) {
                         handler.onEventReceived(new Pod(obj, v1Api), false);
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
-                    stream.close();
-                } finally {
-                    stream.close();
                 }
             }
 
@@ -58,34 +55,34 @@ public class Watcher {
                     return;
                 }
 
-                Stream<V1ContainerStatus> oldStream = oldObj.getStatus().getContainerStatuses().stream()
-                        .filter(V1ContainerStatus::getReady);
+                String containerName = getServerContainerName(newObj);
+                if (containerName == null) {
+                    containerName = getServerContainerName(oldObj);
+                }
 
-                Stream<V1ContainerStatus> newStream = newObj.getStatus().getContainerStatuses().stream()
-                        .filter(V1ContainerStatus::getReady);
+                if (containerName == null) {
+                    return;
+                }
 
-                boolean oldPresent = oldStream.findAny().isPresent();
-                boolean newPresent = newStream.findAny().isPresent();
+                Optional<V1ContainerStatus> oldStatus = getServerStatus(oldObj, containerName);
+                Optional<V1ContainerStatus> newStatus = getServerStatus(newObj, containerName);
+
+                boolean oldReady = oldStatus.isPresent() && oldStatus.get().getReady();
+                boolean newReady = newStatus.isPresent() && newStatus.get().getReady();
 
                 try {
-                    if (!oldPresent && newPresent) {
+                    if (!oldReady && newReady) {
                         handler.onEventReceived(new Pod(newObj, v1Api), false);
                     }
 
-                    if (oldPresent && !newPresent) {
+                    if (oldReady && !newReady) {
                         Pod pod = new Pod(oldObj, v1Api);
                         handler.onEventReceived(pod, true);
                         pod.delete();
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
-                    oldStream.close();
-                    newStream.close();
-                } finally {
-                    oldStream.close();
-                    newStream.close();
                 }
-
             }
 
             @Override
@@ -140,6 +137,41 @@ public class Watcher {
         }
 
         podInformer.addEventHandler(handler);
+    }
+
+    private Optional<V1ContainerStatus> getServerStatus(@NonNull V1Pod obj) {
+        String containerName = getServerContainerName(obj);
+
+        return getServerStatus(obj, containerName);
+    }
+
+    private Optional<V1ContainerStatus> getServerStatus(@NonNull V1Pod obj, String containerName) {
+        if (containerName == null || obj.getStatus() == null || obj.getStatus().getContainerStatuses() == null) {
+            return Optional.empty();
+        }
+
+       return obj.getStatus().getContainerStatuses().stream()
+                .filter(stat -> stat.getName() != null && stat.getName().equals(containerName)).findFirst();
+    }
+
+    private String getServerContainerName(@NonNull V1Pod obj) { // TODO change to service lookup
+        if (obj.getSpec() == null || obj.getSpec().getContainers() == null) {
+            return null;
+        }
+
+        // Find container
+        return obj.getSpec().getContainers().stream().filter(cont ->
+                // Find by port
+                (cont.getPorts() != null &&
+                    cont.getPorts().stream().anyMatch(port ->
+                            (port.getName() != null && port.getName().equalsIgnoreCase("minecraft")) ||
+                                    (port.getContainerPort() != null && port.getContainerPort() == 25565))) ||
+                // Find by name
+                (cont.getName() != null && (cont.getName().equalsIgnoreCase("paper") ||
+                        cont.getName().equalsIgnoreCase("spigot") ||
+                        cont.getName().equalsIgnoreCase("bukkit")))
+        ).findFirst().map(V1Container::getName).orElse(null);
+
     }
 
     public void start() {
