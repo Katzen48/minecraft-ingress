@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import net.chrotos.ingress.minecraft.Watcher;
+import net.chrotos.ingress.minecraft.gamemode.GameMode;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
@@ -33,30 +34,30 @@ public class IngressPlugin {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         try {
-            watcher = new Watcher((pod, deleted) -> {
-                String name = Objects.requireNonNull(pod.getPod().getMetadata()).getName();
+            watcher = new Watcher((endpoint, deleted, watcher) -> {
+                String fullname = endpoint.getPodNamespace() + "/" + endpoint.getPodName();
 
                 if (deleted) {
-                    logger.info("Server {} will be removed.", name);
-                    proxyServer.getServer(name).ifPresent(registeredServer -> proxyServer.unregisterServer(registeredServer.getServerInfo()));
-                    proxyServer.getConfiguration().getAttemptConnectionOrder().remove(name);
+                    logger.info("Server {} will be removed.", fullname);
+                    proxyServer.getServer(fullname).ifPresent(registeredServer -> proxyServer.unregisterServer(registeredServer.getServerInfo()));
+                    proxyServer.getConfiguration().getAttemptConnectionOrder().remove(fullname);
                 } else {
-                    logger.info("New Server {} will be added.", name);
+                    logger.info("New Server {} will be added.", fullname);
 
-                    RegisteredServer server = proxyServer.registerServer(new ServerInfo(name,
-                            InetSocketAddress.createUnresolved(Objects.requireNonNull(
-                            Objects.requireNonNull(pod.getPod().getStatus())
-                                    .getPodIP()),
-                            25565)));
+                    RegisteredServer server = proxyServer.registerServer(new ServerInfo(fullname,
+                            new InetSocketAddress(endpoint.getAddresses()[0],endpoint.getPorts().get(0))));
 
                     if (server == null) {
-                        logger.error("Could not register server " + name);
+                        logger.error("Could not register server " + fullname);
                         return;
                     }
 
-                    String tryServer = pod.getPod().getMetadata().getLabels()
-                            .getOrDefault("net.chrotos.ingress.minecraft/lobby", "false");
-                    if (tryServer.equalsIgnoreCase("true")) {
+                    boolean tryServer = watcher.getGameModes().stream()
+                            .filter(gameMode -> gameMode.areNameAndNamespaceEqual(endpoint.getGameMode(), endpoint.getPodNamespace()))
+                            .findFirst()
+                            .map(GameMode::isLobby)
+                            .orElse(false);
+                    if (tryServer) {
                         if (!(proxyServer.getConfiguration().getAttemptConnectionOrder() instanceof ArrayList) ) {
                             Field field = Class.forName("com.velocitypowered.proxy.config.VelocityConfiguration")
                                             .getDeclaredField("servers");
@@ -72,9 +73,11 @@ public class IngressPlugin {
                                     new ArrayList<>(proxyServer.getConfiguration().getAttemptConnectionOrder()));
                         }
 
-                        proxyServer.getConfiguration().getAttemptConnectionOrder().add(name);
+                        proxyServer.getConfiguration().getAttemptConnectionOrder().add(fullname);
                     }
                 }
+            }, (gameMode, deleted) -> {
+                // TODO
             });
 
             watcher.start();

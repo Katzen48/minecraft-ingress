@@ -8,5 +8,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.kubernetes:client-java-extended:16.0.0'
+    implementation 'io.kubernetes:client-java-extended:17.0.1'
+    implementation 'com.google.guava:guava:31.1-jre'
 }
